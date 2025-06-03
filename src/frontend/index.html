@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenShift Service Mesh Inventory Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌐 OpenShift Service Mesh</h1>
+            <h2>Inventory Management Demo</h2>
+            <p>Container + VM + Service Mesh Integration</p>
+        </header>
+
+        <!-- Service Mesh Status Banner -->
+        <div class="mesh-status" id="meshStatus">
+            <div class="status-indicator">
+                <div class="pulse"></div>
+                <span>Service Mesh Active</span>
+            </div>
+            <div class="mesh-info">
+                <span>🔒 mTLS Enabled</span>
+                <span>📊 Traffic Monitored</span>
+                <span>🛡️ Security Policies Active</span>
+            </div>
+        </div>
+
+        <!-- Demo Information -->
+        <div class="demo-info">
+            <h3>🎯 Demo Architecture</h3>
+            <div class="architecture">
+                <div class="component frontend-comp">
+                    <h4>Frontend</h4>
+                    <p>Nginx + Istio Sidecar</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="component backend-comp">
+                    <h4>Backend API</h4>
+                    <p>Flask + Istio Sidecar</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="component vm-comp">
+                    <h4>Legacy VM</h4>
+                    <p>Python Validator</p>
+                </div>
+            </div>
+            <div class="architecture-row2">
+                <div class="component db-comp">
+                    <h4>PostgreSQL</h4>
+                    <p>Database + Istio Sidecar</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Item Section -->
+        <div class="add-item-section">
+            <h3>📦 Add New Inventory Item</h3>
+            <form id="add-item-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="item-code">Item Code*</label>
+                        <input type="text" id="item-code" required placeholder="e.g., A12345" maxlength="6">
+                        <small>6 characters, start with letter</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="item-name">Item Name*</label>
+                        <input type="text" id="item-name" required placeholder="e.g., Red Widget" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="item-quantity">Quantity*</label>
+                        <input type="number" id="item-quantity" required min="0" placeholder="0">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <span class="btn-text">Add Item</span>
+                    <span class="btn-loader" style="display: none;">Adding...</span>
+                </button>
+            </form>
+            <div id="message" class="message"></div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="search-section">
+            <h3>🔍 Current Inventory</h3>
+            <div class="search-controls">
+                <input type="text" id="search-input" placeholder="Search by code or name..." />
+                <button id="search-btn" class="btn-secondary">Search</button>
+                <button id="refresh-btn" class="btn-secondary">↻ Refresh</button>
+            </div>
+        </div>
+
+        <!-- Inventory Table -->
+        <div class="inventory-section">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <span>Loading inventory through Service Mesh...</span>
+            </div>
+            
+            <div id="inventory-container" style="display: none;">
+                <div class="table-info">
+                    <span id="item-count">0 items</span>
+                    <span class="mesh-indicator">via Service Mesh</span>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table id="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>Item Code</th>
+                                <th>Name</th>
+                                <th>Quantity</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody">
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="pagination" class="pagination" style="display: none;">
+                    <button id="prev-page" class="btn-pagination">← Previous</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page" class="btn-pagination">Next →</button>
+                </div>
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <h4>📦 No Items Yet</h4>
+                <p>Add your first inventory item to see it here.</p>
+                <p>All traffic flows through the Service Mesh with mTLS encryption.</p>
+            </div>
+        </div>
+
+        <!-- Service Mesh Links -->
+        <div class="mesh-links">
+            <h3>🔗 Service Mesh Observability</h3>
+            <div class="links-grid">
+                <a href="https://kiali-istio-system.apps.oxcart.zambruhni.com" target="_blank" class="mesh-link kiali">
+                    <h4>Kiali Dashboard</h4>
+                    <p>Service topology and traffic flow</p>
+                </a>
+                <a href="https://jaeger-istio-system.apps.oxcart.zambruhni.com" target="_blank" class="mesh-link jaeger">
+                    <h4>Jaeger Tracing</h4>
+                    <p>Distributed request tracing</p>
+                </a>
+                <a href="https://grafana-istio-system.apps.oxcart.zambruhni.com" target="_blank" class="mesh-link grafana">
+                    <h4>Grafana Metrics</h4>
+                    <p>Performance monitoring</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>🚀 Powered by Red Hat OpenShift Service Mesh 2.6</p>
+        <p>Demo showcasing containers, VMs, and service mesh integration</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
