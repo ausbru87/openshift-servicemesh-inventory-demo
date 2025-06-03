@@ -14,6 +14,9 @@ spec:
       labels:
         app: postgres-init
         component: database
+      annotations:
+        # Add Istio sidecar injection for Service Mesh communication
+        sidecar.istio.io/inject: "true"
     spec:
       restartPolicy: OnFailure
       containers:
