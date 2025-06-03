@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: inventory-demo
+  labels:
+    app: postgres
+    component: database
+    service: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    # Service Mesh annotations
+    service.beta.openshift.io/serving-cert-secret-name: postgres-tls
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: postgres
+    version: v1
+  sessionAffinity: None
