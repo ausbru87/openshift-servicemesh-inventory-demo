@@ -1,4 +1,3 @@
-cat > src/frontend/Dockerfile << 'EOF'
 # Frontend Dockerfile for OpenShift Service Mesh Inventory Demo
 FROM registry.access.redhat.com/ubi8/nginx-120
 
@@ -61,4 +60,3 @@ LABEL name="inventory-frontend" \
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
-EOF
