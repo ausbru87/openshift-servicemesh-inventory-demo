@@ -12,7 +12,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate  # Required for PVC
+    type: Recreate
   selector:
     matchLabels:
       app: postgres
@@ -24,20 +24,12 @@ spec:
         component: database
         version: v1
       annotations:
-        # Enable Istio sidecar injection for Service Mesh
         sidecar.istio.io/inject: "true"
-        # PostgreSQL specific annotations
-        prometheus.io/scrape: "false"
-        prometheus.io/port: "5432"
     spec:
-      securityContext:
-        runAsNonRoot: false  # PostgreSQL container needs specific user setup
-        fsGroup: 999
-        seccompProfile:
-          type: RuntimeDefault
+      # Remove all securityContext settings - let OpenShift handle everything
       containers:
       - name: postgres
-        image: registry.redhat.io/rhel8/postgresql-13:latest
+        image: image-registry.openshift-image-registry.svc:5000/openshift/postgresql:13-el8
         ports:
         - containerPort: 5432
           name: postgres
@@ -58,17 +50,9 @@ spec:
             secretKeyRef:
               name: postgres-secret
               key: database
-        - name: PGDATA
-          value: /var/lib/pgsql/data/pgdata
-        - name: POSTGRES_INITDB_ARGS
-          value: "--auth-host=md5"
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/pgsql/data
-        - name: postgres-config
-          mountPath: /opt/app-root/src/postgresql-cfg/postgresql.conf
-          subPath: postgresql.conf
-          readOnly: true
         resources:
           requests:
             memory: "256Mi"
@@ -93,21 +77,9 @@ spec:
           timeoutSeconds: 1
           periodSeconds: 10
           failureThreshold: 3
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          # PostgreSQL needs to run as postgres user (999)
-          runAsUser: 999
-          seccompProfile:
-            type: RuntimeDefault
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
           claimName: postgres-pvc
-      - name: postgres-config
-        configMap:
-          name: postgres-config
       restartPolicy: Always
       dnsPolicy: ClusterFirst
