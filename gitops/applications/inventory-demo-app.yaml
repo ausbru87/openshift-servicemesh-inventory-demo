@@ -13,6 +13,10 @@ spec:
     repoURL: https://github.com/ausbru87/openshift-servicemesh-inventory-demo.git
     targetRevision: HEAD
     path: manifests
+    # Add directory configuration for recursive scanning
+    directory:
+      recurse: true
+      jsonnet: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: inventory-demo
