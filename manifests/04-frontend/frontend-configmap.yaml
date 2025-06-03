@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: inventory-demo
+  labels:
+    app: frontend
+    component: ui
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+data:
+  # Backend service endpoint for API calls
+  BACKEND_SERVICE_URL: "http://backend-service:5000"
+  BACKEND_API_ENDPOINT: "/api"
+  
+  # Frontend configuration
+  APP_TITLE: "OpenShift Service Mesh Inventory Demo"
+  APP_DESCRIPTION: "Container + VM + Service Mesh Integration"
+  
+  # Service Mesh observability URLs (will be updated for your cluster)
+  KIALI_URL: "https://kiali-istio-system.apps.cluster-domain.com"
+  JAEGER_URL: "https://jaeger-istio-system.apps.cluster-domain.com"
+  GRAFANA_URL: "https://grafana-istio-system.apps.cluster-domain.com"
