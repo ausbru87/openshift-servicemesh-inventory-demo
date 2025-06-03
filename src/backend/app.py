@@ -12,6 +12,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from sqlalchemy import text
 
 # Configure logging
 logging.basicConfig(
@@ -88,7 +89,7 @@ def ready():
     """Readiness check endpoint for Kubernetes readiness probe"""
     try:
         # Test database connection
-        db.session.execute('SELECT 1')
+        db.session.execute(text('SELECT 1'))
         db.session.commit()
         
         return {
