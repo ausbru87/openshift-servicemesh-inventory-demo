@@ -23,6 +23,7 @@ spec:
         sidecar.istio.io/inject: "true"
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
+        argocd.argoproj.io/sync-wave: "2"
     spec:
       securityContext:
         runAsNonRoot: true
