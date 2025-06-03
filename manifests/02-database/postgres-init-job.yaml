@@ -15,7 +15,6 @@ spec:
         app: postgres-init
         component: database
       annotations:
-        # Add Istio sidecar injection for Service Mesh communication
         sidecar.istio.io/inject: "true"
     spec:
       restartPolicy: OnFailure
@@ -47,6 +46,12 @@ spec:
           fi
           
           echo "Database initialization complete"
+          
+          # Shut down Istio sidecar to allow job completion
+          echo "Shutting down Istio sidecar..."
+          curl -fsI -X POST http://localhost:15000/quitquitquit && echo "Istio sidecar shutdown successful" || echo "Istio sidecar shutdown failed (may not be needed)"
+          
+          echo "Job completed"
         env:
         - name: PGPASSWORD
           valueFrom:
