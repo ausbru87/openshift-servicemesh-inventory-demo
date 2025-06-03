@@ -26,9 +26,7 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1001
-        runAsGroup: 0
-        fsGroup: 0
+        # Remove explicit runAsUser and fsGroup - let OpenShift assign them
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -68,8 +66,7 @@ spec:
             drop:
             - ALL
           runAsNonRoot: true
-          runAsUser: 1001
-          runAsGroup: 0
+          # Remove explicit runAsUser - let OpenShift assign it
           seccompProfile:
             type: RuntimeDefault
       restartPolicy: Always
