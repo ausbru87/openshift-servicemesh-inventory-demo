@@ -1,0 +1,169 @@
+name: Build Images and Update GitOps
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'container-images/**'
+      - 'manifests/**'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_BACKEND: ${{ github.repository }}/inventory-backend
+  IMAGE_NAME_FRONTEND: ${{ github.repository }}/inventory-frontend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+    
+    outputs:
+      backend-image: ${{ steps.image-tags.outputs.backend-image }}
+      frontend-image: ${{ steps.image-tags.outputs.frontend-image }}
+      short-sha: ${{ steps.image-tags.outputs.short-sha }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate image tags
+      id: image-tags
+      run: |
+        SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+        BACKEND_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${SHORT_SHA}"
+        FRONTEND_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:${SHORT_SHA}"
+        
+        echo "short-sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+        echo "backend-image=${BACKEND_IMAGE}" >> $GITHUB_OUTPUT
+        echo "frontend-image=${FRONTEND_IMAGE}" >> $GITHUB_OUTPUT
+        
+        echo "Backend image: ${BACKEND_IMAGE}"
+        echo "Frontend image: ${FRONTEND_IMAGE}"
+
+    - name: Build and push backend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./src/backend
+        file: ./src/backend/Dockerfile
+        push: true
+        tags: |
+          ${{ steps.image-tags.outputs.backend-image }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:latest
+        labels: |
+          org.opencontainers.image.title=Inventory Backend
+          org.opencontainers.image.description=OpenShift Service Mesh Inventory Demo Backend
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.revision=${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64
+
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./src/frontend
+        file: ./src/frontend/Dockerfile
+        push: true
+        tags: |
+          ${{ steps.image-tags.outputs.frontend-image }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:latest
+        labels: |
+          org.opencontainers.image.title=Inventory Frontend
+          org.opencontainers.image.description=OpenShift Service Mesh Inventory Demo Frontend
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.revision=${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64
+
+  update-gitops:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+    - name: Update deployment manifests
+      run: |
+        # Update backend deployment
+        sed -i "s|image: ghcr.io/.*/inventory-backend:.*|image: ${{ needs.build-and-push.outputs.backend-image }}|g" \
+          manifests/03-backend/backend-deployment.yaml
+        
+        # Update frontend deployment
+        sed -i "s|image: ghcr.io/.*/inventory-frontend:.*|image: ${{ needs.build-and-push.outputs.frontend-image }}|g" \
+          manifests/04-frontend/frontend-deployment.yaml
+        
+        echo "=== Updated Images ==="
+        echo "Backend: ${{ needs.build-and-push.outputs.backend-image }}"
+        echo "Frontend: ${{ needs.build-and-push.outputs.frontend-image }}"
+
+    - name: Commit and push changes
+      run: |
+        git add manifests/
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "🚀 Update images to ${{ needs.build-and-push.outputs.short-sha }}
+
+          Backend: ${{ needs.build-and-push.outputs.backend-image }}
+          Frontend: ${{ needs.build-and-push.outputs.frontend-image }}
+          
+          GitOps: ArgoCD will automatically deploy these changes"
+          git push
+        fi
+
+  security-scan:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    
+    strategy:
+      matrix:
+        image: 
+          - ${{ needs.build-and-push.outputs.backend-image }}
+          - ${{ needs.build-and-push.outputs.frontend-image }}
+    
+    steps:
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ matrix.image }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
