@@ -1,26 +1,34 @@
-# This VirtualService resource routes traffic from the Istio Ingress Gateway
-# to the frontend service.
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: frontend-vs
-  namespace: inventory-demo # VirtualService should be in the same namespace as the service
+  namespace: inventory-demo
   labels:
     app: frontend
     component: ui
   annotations:
-    argocd.argoproj.io/sync-wave: "6" # Sync after Gateway
+    argocd.argoproj.io/sync-wave: "6"
 spec:
   hosts:
-  - "*" # Match all hosts defined in the Gateway (or specify your route's hostname)
+  - "*"
   gateways:
-  - inventory-demo-gateway # Reference the Gateway created above
+  - inventory-demo-gateway
   http:
+  # Route API requests directly to backend service (ADDED)
   - match:
     - uri:
-        prefix: / # Match all incoming requests for the frontend
+        prefix: /api/
     route:
     - destination:
-        host: frontend-service.inventory-demo.svc.cluster.local # Fully qualified service name
+        host: backend-service.inventory-demo.svc.cluster.local
         port:
-          number: 8080 # Port exposed by the frontend service
+          number: 5000
+  # Route all other requests to frontend (EXISTING)
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: frontend-service.inventory-demo.svc.cluster.local
+        port:
+          number: 8080
