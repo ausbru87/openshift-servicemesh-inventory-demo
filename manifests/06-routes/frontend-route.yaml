@@ -2,20 +2,18 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: inventory-demo
-  namespace: inventory-demo
+  namespace: istio-system
   labels:
     app: frontend
     component: ui
-  annotations:
-    argocd.argoproj.io/sync-wave: "7"
-    haproxy.router.openshift.io/timeout: "60s"
 spec:
+  host: inventory-demo-inventory-demo.apps.oxcart.zambruhni.com
   to:
     kind: Service
-    name: istio-ingressgateway-proxy  # Point to the proxy service
+    name: istio-ingressgateway
     weight: 100
   port:
-    targetPort: http
+    targetPort: http2
   tls:
     termination: edge
     insecureEdgeTerminationPolicy: Redirect
