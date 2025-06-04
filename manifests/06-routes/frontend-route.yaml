@@ -12,11 +12,26 @@ metadata:
 spec:
   to:
     kind: Service
-    name: frontend-service
+    # IMPORTANT: Point the route to the Istio Ingress Gateway service
+    # This service is typically in the 'istio-system' namespace and named 'istio-ingressgateway'
+    # Verify the actual name and namespace in your cluster if different.
+    name: istio-ingressgateway # Changed from frontend-service
     weight: 100
+  # IMPORTANT: The targetPort here should match the port defined in your Istio Gateway for HTTP/HTTPS.
+  # For the default Istio Ingress Gateway, these are usually 'http2' (80) or 'https' (443).
+  # Since your Istio Gateway defines http (80) and https (443), we'll target 'http2' for HTTP traffic.
   port:
-    targetPort: http
+    targetPort: http2 # Changed from http to http2 (common for Istio Ingress Gateway HTTP port)
   tls:
-    termination: edge
+    termination: passthrough # Changed from edge to passthrough
+    # When using Istio Ingress Gateway with an OpenShift Route,
+    # if the Route terminates TLS (edge/reencrypt), the Gateway should be PASSTHROUGH.
+    # If the Gateway terminates TLS, the Route should be passthrough.
+    # Given the Gateway is using PASSTHROUGH, the Route should also be PASSTHROUGH
+    # to allow the Gateway to handle the TLS from the browser.
+    # Alternatively, if you want the OpenShift Router to terminate TLS,
+    # keep 'edge' here and ensure the Gateway is configured to accept plain HTTP
+    # on the internal port, or use a reencrypt termination.
+    # For simplicity and common Istio patterns, we'll try passthrough here.
     insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None
