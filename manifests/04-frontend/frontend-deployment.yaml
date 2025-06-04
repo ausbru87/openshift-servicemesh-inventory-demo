@@ -20,7 +20,7 @@ spec:
         component: ui
         version: v1
       annotations:
-        sidecar.istio.io/inject: "true"
+        sidecar.istio.io/inject: "true" # Ensure Istio sidecar is injected
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         argocd.argoproj.io/sync-wave: "4"
@@ -33,10 +33,10 @@ spec:
       containers:
       - name: frontend
         # GitHub Container Registry image - updated by GitHub Actions
-        image: ghcr.io/ausbru87/openshift-servicemesh-inventory-demo/inventory-frontend:193ccab
+        image: ghcr.io/ausbru87/openshift-servicemesh-inventory-demo/inventory-frontend:1fee7ab
         ports:
         - containerPort: 8080
-          name: http
+          name: http # Important for Istio to identify the port protocol
           protocol: TCP
         resources:
           requests:
@@ -70,5 +70,13 @@ spec:
           # Remove explicit runAsUser - let OpenShift assign it
           seccompProfile:
             type: RuntimeDefault
+        volumeMounts:
+        - name: nginx-config-volume # Mount the Nginx configuration
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf # Mount only the nginx.conf file
+      volumes:
+      - name: nginx-config-volume # Define the volume for the Nginx ConfigMap
+        configMap:
+          name: nginx-frontend-config # Reference the new ConfigMap
       restartPolicy: Always
       dnsPolicy: ClusterFirst

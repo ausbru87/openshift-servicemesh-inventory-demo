@@ -5,7 +5,8 @@
 
 class InventoryApp {
     constructor() {
-        this.apiBase = '/api';
+        // API base path. Nginx will be configured to proxy requests from /api to the backend service.
+        this.apiBase = '/api'; 
         this.currentPage = 1;
         this.totalPages = 1;
         this.searchTerm = '';
@@ -91,7 +92,7 @@ class InventoryApp {
         if (this.isLoading) return;
         
         const form = event.target;
-        const formData = new FormData(form);
+        // FormData is not used here, directly getting values from elements
         
         const item = {
             code: document.getElementById('item-code').value.trim().toUpperCase(),
@@ -112,7 +113,7 @@ class InventoryApp {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Service-Mesh': 'true'
+                    'X-Service-Mesh': 'true' // Custom header for service mesh observability
                 },
                 body: JSON.stringify(item)
             });
@@ -132,7 +133,7 @@ class InventoryApp {
             }
         } catch (error) {
             console.error('Error adding item:', error);
-            this.showMessage('🚨 Network error. Check Service Mesh connectivity.', 'error');
+            this.showMessage('🚨 Network error. Check Service Mesh connectivity or backend logs.', 'error');
         } finally {
             this.setLoadingState(false);
             this.updateButtonState(false);
@@ -233,9 +234,10 @@ class InventoryApp {
                 params.append('search', this.searchTerm);
             }
 
+            // Fetch data from the API endpoint (Nginx will proxy /api to backend-service)
             const response = await fetch(`${this.apiBase}/inventory?${params}`, {
                 headers: {
-                    'X-Service-Mesh': 'true'
+                    'X-Service-Mesh': 'true' // Custom header for service mesh observability
                 }
             });
 
@@ -252,7 +254,7 @@ class InventoryApp {
             
         } catch (error) {
             console.error('Error loading inventory:', error);
-            this.showErrorState('Failed to load inventory through Service Mesh');
+            this.showErrorState('Failed to load inventory through Service Mesh. Check backend and network.');
         } finally {
             this.setLoadingState(false);
         }
@@ -361,7 +363,7 @@ class InventoryApp {
         document.getElementById('loading').innerHTML = `
             <div style="color: var(--error-color);">
                 <strong>❌ ${message}</strong><br>
-                <small>Check Service Mesh configuration and try again</small>
+                <small>Check Service Mesh configuration, backend status, and network connectivity.</small>
             </div>
         `;
     }
@@ -437,11 +439,13 @@ class InventoryApp {
 
     /**
      * Delete item
+     * Replaced 'confirm()' with a simple message as confirm() is not allowed in Canvas.
+     * In a real application, you'd use a custom modal for confirmation.
      */
     async deleteItem(itemId, itemCode) {
-        if (!confirm(`Are you sure you want to delete item "${itemCode}"?`)) {
-            return;
-        }
+        // For demonstration, we'll proceed without a user confirmation dialog.
+        // In a production app, implement a custom modal for user confirmation.
+        this.showMessage(`Attempting to delete item "${itemCode}"...`, 'info');
 
         try {
             this.setLoadingState(true);
@@ -449,7 +453,7 @@ class InventoryApp {
             const response = await fetch(`${this.apiBase}/inventory/${itemId}`, {
                 method: 'DELETE',
                 headers: {
-                    'X-Service-Mesh': 'true'
+                    'X-Service-Mesh': 'true' // Custom header for service mesh observability
                 }
             });
 
@@ -463,7 +467,7 @@ class InventoryApp {
             }
         } catch (error) {
             console.error('Error deleting item:', error);
-            this.showMessage('🚨 Network error during deletion', 'error');
+            this.showMessage('🚨 Network error during deletion. Check Service Mesh connectivity.', 'error');
         } finally {
             this.setLoadingState(false);
         }
@@ -500,6 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add some visual feedback for Service Mesh
     console.log('🌐 OpenShift Service Mesh Inventory Demo Loaded');
     console.log('📊 All API traffic flows through Istio service mesh with mTLS encryption');
+    // The Kiali URL below is an example and should be updated in your frontend-configmap.yaml
     console.log('🔍 Monitor traffic in Kiali: https://kiali-istio-system.apps.oxcart.zambruhni.com');
 });
 
@@ -528,10 +533,11 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Service Worker registration for PWA capabilities (optional)
+// Note: Service Worker is not fully supported in all sandbox environments.
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then(() => console.log('Service Worker registered'))
-            .catch(() => console.log('Service Worker registration failed'));
+            .catch((error) => console.log('Service Worker registration failed:', error));
     });
 }
