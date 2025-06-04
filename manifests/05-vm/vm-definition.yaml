@@ -34,6 +34,9 @@ metadata:
       hs.status = "Progressing"
       hs.message = "VirtualMachine is not ready"
       return hs
+    argocd.argoproj.io/sync-options: "SkipDryRunOnMissingResource=true"
+    # Ignore the virt-launcher pod health
+    argocd.argoproj.io/compare-options: "IgnoreExtraneous"
     description: "Legacy CentOS 7 VM running item validation service"
 spec:
   # VM should be running
