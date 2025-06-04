@@ -1,0 +1,57 @@
+# WorkloadEntry to register the VM in the Service Mesh
+# Note: This will need to be updated with the actual VM IP after deployment
+apiVersion: networking.istio.io/v1beta1
+kind: WorkloadEntry
+metadata:
+  name: legacy-validator-vm
+  namespace: inventory-demo
+  labels:
+    app: legacy-validator
+    component: vm
+    version: v1
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    # This is a template - the actual IP will need to be updated after VM deployment
+    description: "VM WorkloadEntry - update address with actual VM IP after deployment"
+spec:
+  # This address will need to be updated with the actual VM IP
+  # You can get it with: oc get vmi legacy-validator -o jsonpath='{.status.interfaces[0].ipAddress}'
+  address: "PLACEHOLDER_VM_IP"
+  
+  ports:
+    http: 8080
+    
+  labels:
+    app: legacy-validator
+    component: vm
+    version: v1
+    service.istio.io/canonical-name: legacy-validator
+    service.istio.io/canonical-revision: v1
+    
+  # Associate with the service
+  serviceAccount: default
+---
+# Alternative ServiceEntry approach for external service registration
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: legacy-validator-external
+  namespace: inventory-demo
+  labels:
+    app: legacy-validator
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    description: "Alternative service mesh registration via ServiceEntry"
+spec:
+  hosts:
+  - legacy-service.inventory-demo.svc.cluster.local
+  ports:
+  - number: 8080
+    name: http
+    protocol: HTTP
+  location: MESH_EXTERNAL
+  resolution: STATIC
+  endpoints:
+  - address: "PLACEHOLDER_VM_IP"
+    ports:
+      http: 8080

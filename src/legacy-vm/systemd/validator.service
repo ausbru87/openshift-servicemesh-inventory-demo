@@ -1,0 +1,24 @@
+[Unit]
+Description=Legacy Item Validation Service
+After=network.target
+
+[Service]
+Type=simple
+User=validator
+WorkingDirectory=/opt/validator
+ExecStart=/usr/bin/python3 /opt/validator/validator.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=FLASK_ENV=production
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

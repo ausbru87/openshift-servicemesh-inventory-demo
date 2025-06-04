@@ -1,0 +1,173 @@
+# Job to automatically update WorkloadEntry with VM IP
+# This runs after VM deployment to configure service mesh integration
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vm-ip-configurator
+  namespace: inventory-demo
+  labels:
+    app: legacy-validator
+    component: vm-helper
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  # Don't retry too many times
+  backoffLimit: 3
+  # Clean up after 1 hour
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: legacy-validator
+        component: vm-helper
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: vm-configurator
+      containers:
+      - name: configurator
+        image: registry.redhat.io/ubi8/ubi:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          echo "🔍 VM IP Configurator Job Starting"
+          echo "=================================="
+          
+          # Install required tools
+          dnf install -y jq curl
+          
+          # Wait for VM to be ready (with timeout)
+          echo "⏳ Waiting for VM to be ready..."
+          for i in {1..60}; do
+            if oc get vmi legacy-validator -n inventory-demo >/dev/null 2>&1; then
+              VM_STATUS=$(oc get vmi legacy-validator -n inventory-demo -o jsonpath='{.status.phase}')
+              if [ "$VM_STATUS" = "Running" ]; then
+                echo "✅ VM is running"
+                break
+              fi
+            fi
+            echo "   Attempt $i/60: VM not ready yet, waiting 10s..."
+            sleep 10
+          done
+          
+          # Get VM IP
+          VM_IP=$(oc get vmi legacy-validator -n inventory-demo -o jsonpath='{.status.interfaces[0].ipAddress}')
+          
+          if [ -z "$VM_IP" ]; then
+              echo "❌ Failed to get VM IP address after 10 minutes"
+              exit 1
+          fi
+          
+          echo "✅ VM IP Address: $VM_IP"
+          
+          # Update WorkloadEntry
+          echo "🔧 Updating WorkloadEntry with VM IP..."
+          oc patch workloadentry legacy-validator-vm -n inventory-demo --type='merge' -p="{\"spec\":{\"address\":\"$VM_IP\"}}"
+          
+          # Update ServiceEntry  
+          echo "🔧 Updating ServiceEntry with VM IP..."
+          oc patch serviceentry legacy-validator-external -n inventory-demo --type='merge' -p="{\"spec\":{\"endpoints\":[{\"address\":\"$VM_IP\",\"ports\":{\"http\":8080}}]}}"
+          
+          echo "✅ Service mesh configuration updated!"
+          
+          # Wait for validation service to be ready
+          echo "⏳ Waiting for validation service to start..."
+          for i in {1..30}; do
+            if curl -s -f http://$VM_IP:8080/health >/dev/null 2>&1; then
+              echo "✅ Validation service is responding"
+              break
+            fi
+            echo "   Attempt $i/30: Service not ready, waiting 10s..."
+            sleep 10
+          done
+          
+          # Test connectivity through service mesh
+          echo "🧪 Testing service mesh connectivity..."
+          BACKEND_POD=$(oc get pods -n inventory-demo -l app=backend -o jsonpath='{.items[0].metadata.name}')
+          if [ -n "$BACKEND_POD" ]; then
+            echo "Testing from backend pod: $BACKEND_POD"
+            if oc exec -n inventory-demo $BACKEND_POD -c backend -- curl -s -f http://legacy-service:8080/health >/dev/null 2>&1; then
+              echo "✅ Service mesh connectivity working!"
+              
+              # Test actual validation
+              echo "🧪 Testing validation endpoint..."
+              RESULT=$(oc exec -n inventory-demo $BACKEND_POD -c backend -- curl -s -X POST http://legacy-service:8080/validate -H "Content-Type: application/json" -d '{"code":"A12345"}')
+              if echo "$RESULT" | jq -e '.valid == true' >/dev/null 2>&1; then
+                echo "✅ Validation service is working correctly!"
+              else
+                echo "⚠️  Validation service responded but validation failed"
+                echo "Response: $RESULT"
+              fi
+            else
+              echo "⚠️  Service mesh connectivity test failed"
+            fi
+          else
+            echo "⚠️  No backend pod found for testing"
+          fi
+          
+          echo "🎉 VM configuration complete!"
+          echo ""
+          echo "📊 Configuration Summary:"
+          echo "  VM IP: $VM_IP"
+          echo "  WorkloadEntry: Updated"
+          echo "  ServiceEntry: Updated"
+          echo "  Service Mesh: Configured"
+          
+        env:
+        - name: HOME
+          value: /tmp
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+---
+# ServiceAccount for the configurator job
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vm-configurator
+  namespace: inventory-demo
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+---
+# Role with permissions to update WorkloadEntry and ServiceEntry
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vm-configurator
+  namespace: inventory-demo
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+- apiGroups: ["kubevirt.io"]
+  resources: ["virtualmachineinstances"]
+  verbs: ["get", "list"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["workloadentries", "serviceentries"]
+  verbs: ["get", "patch", "update"]
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vm-configurator
+  namespace: inventory-demo
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+subjects:
+- kind: ServiceAccount
+  name: vm-configurator
+  namespace: inventory-demo
+roleRef:
+  kind: Role
+  name: vm-configurator
+  apiGroup: rbac.authorization.k8s.io

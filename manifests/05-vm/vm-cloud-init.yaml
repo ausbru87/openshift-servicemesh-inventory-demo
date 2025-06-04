@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: legacy-validator-cloud-init
+  namespace: inventory-demo
+  labels:
+    app: legacy-validator
+    component: vm
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+type: Opaque
+stringData:
+  userdata: |
+    #cloud-config
+    user: cloud-user
+    password: redhat123
+    chpasswd: { expire: False }
+    ssh_pwauth: True
+    
+    # Package installation
+    packages:
+      - python3
+      - python3-pip
+      - python3-setuptools
+      - git
+      - curl
+      - wget
+      - systemd
+      - htop
+      - vim
+    
+    # Create the validator service user
+    users:
+      - name: validator
+        sudo: ['ALL=(ALL) NOPASSWD:ALL']
+        shell: /bin/bash
+        lock_passwd: false
+        passwd: '$6$rounds=4096$saltsaltlettuce$Lp/FV.2oOgew7GbM6Nr8KMGgBP/1ToqCdAV3xFLKI6bTjxJ9OTBEYFJKIgBsEgVHTOJF/X66tj7a8pZLt6gfV/'
+    
+    # Commands to run during initialization
+    runcmd:
+      # Create application directory
+      - mkdir -p /opt/validator
+      - chown -R validator:validator /opt/validator
+      
+      # Clone the application from your repository
+      - cd /tmp
+      - git clone https://github.com/ausbru87/openshift-servicemesh-inventory-demo.git
+      - cp -r openshift-servicemesh-inventory-demo/src/legacy-vm/* /opt/validator/
+      - chown -R validator:validator /opt/validator
+      
+      # Install Python dependencies
+      - pip3 install -r /opt/validator/requirements.txt
+      
+      # Install and start the systemd service
+      - cp /opt/validator/systemd/validator.service /etc/systemd/system/
+      - systemctl daemon-reload
+      - systemctl enable validator.service
+      - systemctl start validator.service
+      
+      # Wait and verify service is running
+      - sleep 10
+      - systemctl status validator.service
+      - echo "Testing validation service..."
+      - curl -f http://localhost:8080/health || echo "Service not ready yet, will retry..."
+      - sleep 5
+      - curl -f http://localhost:8080/health && echo "Validation service is ready!"
+      
+    # Final message
+    final_message: "Legacy validation service deployed from Git repository!"

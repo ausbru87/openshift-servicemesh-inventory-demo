@@ -1,0 +1,52 @@
+# DestinationRule for the legacy validation service
+# Configures how traffic flows to the VM through the service mesh
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: legacy-validator-dr
+  namespace: inventory-demo
+  labels:
+    app: legacy-validator
+    component: vm
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  host: legacy-service.inventory-demo.svc.cluster.local
+  trafficPolicy:
+    # Connection pooling for the legacy service
+    connectionPool:
+      tcp:
+        maxConnections: 10
+        connectTimeout: 10s
+      http:
+        http1MaxPendingRequests: 10
+        maxRequestsPerConnection: 2
+        consecutiveGatewayErrors: 3
+        interval: 30s
+        baseEjectionTime: 30s
+    
+    # Circuit breaker for resilience
+    outlierDetection:
+      consecutiveGatewayErrors: 3
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+    
+    # Load balancer configuration
+    loadBalancer:
+      simple: LEAST_CONN
+      
+    # TLS configuration - since VM doesn't have sidecar, use SIMPLE mode
+    tls:
+      mode: SIMPLE
+      # Note: For production, you might want ISTIO_MUTUAL if the VM has Istio proxy
+  
+  # Port-specific policies
+  portLevelSettings:
+  - port:
+      number: 8080
+    connectionPool:
+      tcp:
+        maxConnections: 5
+        connectTimeout: 5s

@@ -1,0 +1,116 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: legacy-validator
+  namespace: inventory-demo
+  labels:
+    app: legacy-validator
+    component: vm
+    version: v1
+    # Service mesh labels
+    service.istio.io/canonical-name: legacy-validator
+    service.istio.io/canonical-revision: v1
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    description: "Legacy RHEL8 VM running item validation service"
+spec:
+  # VM should be running
+  running: true
+  
+  # VM Template
+  template:
+    metadata:
+      labels:
+        app: legacy-validator
+        component: vm
+        version: v1
+        # Important: These labels help with service mesh integration
+        kubevirt.io/vm: legacy-validator
+        service.istio.io/canonical-name: legacy-validator
+        service.istio.io/canonical-revision: v1
+      annotations:
+        # Note: VMs don't get Istio sidecar injection automatically
+        # We'll handle service mesh integration via WorkloadEntry
+        vm.kubevirt.io/os: "rhel8"
+    spec:
+      # VM should be scheduled and restart if it fails
+      domain:
+        # CPU and Memory configuration
+        cpu:
+          cores: 2
+          sockets: 1
+          threads: 1
+        memory:
+          guest: 4Gi
+        
+        # Devices configuration
+        devices:
+          # Disk configuration
+          disks:
+          - name: rootdisk
+            bootOrder: 1
+            disk:
+              bus: virtio
+          - name: cloudinitdisk
+            disk:
+              bus: virtio
+          
+          # Network configuration
+          interfaces:
+          - name: default
+            masquerade: {}
+            
+          # Enable serial console for troubleshooting
+          rng: {}
+        
+        # Resource requirements
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: "1"
+          limits:
+            memory: 4Gi
+            cpu: "2"
+            
+        # Machine type for RHEL8
+        machine:
+          type: pc-q35-rhel8.6.0
+          
+      # Ensure VM gets scheduled
+      nodeSelector: {}
+      
+      # Network configuration
+      networks:
+      - name: default
+        pod: {}
+        
+      # Volume configuration
+      volumes:
+      - name: rootdisk
+        dataVolume:
+          name: rhel8-legacy-validator
+      - name: cloudinitdisk
+        cloudInitNoCloud:
+          secretRef:
+            name: legacy-validator-cloud-init
+            
+  # Data volume templates (this ensures the DataVolume is created with the VM)
+  dataVolumeTemplates:
+  - metadata:
+      name: rhel8-legacy-validator
+      labels:
+        app: legacy-validator
+        component: vm
+    spec:
+      source:
+        registry:
+          # Use the same RHEL8 guest image from Red Hat registry
+          url: "docker://registry.redhat.io/rhel8/rhel-guest-image@sha256:cd97caf10611cfe4ccdeb64999f9c13b3b5f8cb25b83d0a2b9"
+          pullMethod: node
+      storage:
+        resources:
+          requests:
+            storage: 40Gi
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: nfs-nvme
