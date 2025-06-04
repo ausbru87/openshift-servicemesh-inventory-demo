@@ -17,18 +17,17 @@ stringData:
     chpasswd: { expire: False }
     ssh_pwauth: True
     
-    # Package installation for Fedora
+    # Package installation for CentOS 7 (REALLY legacy!)
     packages:
-      - python3
-      - python3-pip
-      - python3-setuptools
+      - python
+      - python-pip
+      - python-setuptools
       - git
       - curl
       - wget
       - systemd
       - htop
       - vim
-      - jq
     
     # Create the validator service user
     users:
@@ -38,7 +37,7 @@ stringData:
         lock_passwd: false
         passwd: '$6$rounds=4096$saltsaltlettuce$Lp/FV.2oOgew7GbM6Nr8KMGgBP/1ToqCdAV3xFLKI6bTjxJ9OTBEYFJKIgBsEgVHTOJF/X66tj7a8pZLt6gfV/'
     
-    # Commands to run during initialization
+    # Commands to run during initialization (CentOS 7 / Python 2.7)
     runcmd:
       # Create application directory
       - mkdir -p /opt/validator
@@ -50,12 +49,16 @@ stringData:
       - cp -r openshift-servicemesh-inventory-demo/src/legacy-vm/* /opt/validator/
       - chown -R validator:validator /opt/validator
       
-      # Install Python dependencies using pip3
-      - python3 -m pip install --upgrade pip
-      - python3 -m pip install -r /opt/validator/requirements.txt
+      # Install Python 2.7 dependencies (LEGACY!)
+      - pip install --upgrade pip
+      - pip install flask==1.1.4 requests==2.25.1 werkzeug==1.0.1
+      
+      # Update the Python shebang for Python 2.7 compatibility
+      - sed -i '1s/python3/python/' /opt/validator/validator.py
       
       # Install and start the systemd service
       - cp /opt/validator/systemd/validator.service /etc/systemd/system/
+      - sed -i 's/python3/python/' /etc/systemd/system/validator.service
       - systemctl daemon-reload
       - systemctl enable validator.service
       - systemctl start validator.service
@@ -63,10 +66,10 @@ stringData:
       # Wait and verify service is running
       - sleep 10
       - systemctl status validator.service
-      - echo "Testing validation service..."
+      - echo "Testing legacy validation service..."
       - curl -f http://localhost:8080/health || echo "Service not ready yet, will retry..."
       - sleep 5
-      - curl -f http://localhost:8080/health && echo "Validation service is ready!"
+      - curl -f http://localhost:8080/health && echo "Legacy validation service is ready!"
       
     # Final message
-    final_message: "Legacy validation service deployed from Git repository on Fedora!"
+    final_message: "LEGACY validation service deployed with Python 2.7 on CentOS 7! This is REALLY old school!"
