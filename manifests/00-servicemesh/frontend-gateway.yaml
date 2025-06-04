@@ -1,0 +1,31 @@
+# This Gateway resource configures the Istio Ingress Gateway to expose
+# the frontend application to external traffic.
+# It listens on HTTP port 80 and HTTPS port 443.
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: inventory-demo-gateway
+  namespace: inventory-demo # Gateway should be in the same namespace as the route/service
+  labels:
+    app: frontend
+    component: ui
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # Sync after frontend deployment and service
+spec:
+  selector:
+    istio: ingressgateway # This selects the default Istio Ingress Gateway pod
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*" # Allow all hosts for now, or specify your route's hostname
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: PASSTHROUGH # Use PASSTHROUGH for OpenShift Route edge termination
+    hosts:
+    - "*" # Allow all hosts for now, or specify your route's hostname
