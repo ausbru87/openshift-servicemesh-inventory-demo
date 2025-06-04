@@ -33,7 +33,7 @@ spec:
       containers:
       - name: frontend
         # GitHub Container Registry image - updated by GitHub Actions
-        image: ghcr.io/ausbru87/openshift-servicemesh-inventory-demo/inventory-frontend:1fee7ab
+        image: ghcr.io/ausbru87/openshift-servicemesh-inventory-demo/inventory-frontend:193ccab
         ports:
         - containerPort: 8080
           name: http
