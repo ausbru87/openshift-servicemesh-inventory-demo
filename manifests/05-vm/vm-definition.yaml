@@ -12,6 +12,28 @@ metadata:
     service.istio.io/canonical-revision: v1
   annotations:
     argocd.argoproj.io/sync-wave: "1"
+    # ArgoCD health check configuration
+    argocd.argoproj.io/health-check: |
+      hs = {}
+      if obj.status ~= nil then
+        if obj.status.conditions ~= nil then
+          for i, condition in ipairs(obj.status.conditions) do
+            if condition.type == "Ready" and condition.status == "True" then
+              hs.status = "Healthy"
+              hs.message = "VirtualMachine is ready"
+              return hs
+            end
+          end
+        end
+        if obj.status.printableStatus == "Running" then
+          hs.status = "Progressing"
+          hs.message = "VirtualMachine is starting"
+          return hs
+        end
+      end
+      hs.status = "Progressing"
+      hs.message = "VirtualMachine is not ready"
+      return hs
     description: "Legacy RHEL8 VM running item validation service"
 spec:
   # VM should be running
@@ -111,5 +133,5 @@ spec:
           requests:
             storage: 40Gi
         accessModes:
-          - ReadWriteOnce
+          - ReadWriteMany  # Required for live migration
         storageClassName: nfs-nvme
