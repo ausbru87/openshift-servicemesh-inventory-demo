@@ -26,15 +26,15 @@ metadata:
           end
         end
         if obj.status.printableStatus == "Running" then
-          hs.status = "Progressing"
-          hs.message = "VirtualMachine is starting"
+          hs.status = "Healthy"
+          hs.message = "VirtualMachine is running"
           return hs
         end
       end
       hs.status = "Progressing"
       hs.message = "VirtualMachine is not ready"
       return hs
-    description: "Legacy RHEL8 VM running item validation service"
+    description: "Legacy CentOS 7 VM running item validation service"
 spec:
   # VM should be running
   running: true

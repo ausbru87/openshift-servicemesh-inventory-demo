@@ -10,7 +10,7 @@ metadata:
     component: vm
     version: v1
   annotations:
-    argocd.argoproj.io/sync-wave: "7"
+    argocd.argoproj.io/sync-wave: "8"
     # This is a template - the actual IP will need to be updated after VM deployment
     description: "VM WorkloadEntry - update address with actual VM IP after deployment"
 spec:
@@ -40,7 +40,7 @@ metadata:
   labels:
     app: legacy-validator
   annotations:
-    argocd.argoproj.io/sync-wave: "7"
+    argocd.argoproj.io/sync-wave: "8"
     description: "Alternative service mesh registration via ServiceEntry"
 spec:
   hosts:

@@ -9,7 +9,7 @@ metadata:
     app: legacy-validator
     component: vm-helper
   annotations:
-    argocd.argoproj.io/sync-wave: "6"
+    argocd.argoproj.io/sync-wave: "7"
 spec:
   # Don't retry too many times
   backoffLimit: 3
@@ -154,6 +154,12 @@ rules:
 - apiGroups: ["networking.istio.io"]
   resources: ["workloadentries", "serviceentries"]
   verbs: ["get", "patch", "update"]
+- apiGroups: ["kubevirt.io"]
+  resources: ["virtualmachineinstances", "virtualmachines"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["subresources.kubevirt.io"]
+  resources: ["virtualmachineinstances/console", "virtualmachineinstances/vnc"]
+  verbs: ["get"]
 ---
 # RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
