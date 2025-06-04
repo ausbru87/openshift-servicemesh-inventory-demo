@@ -25,16 +25,13 @@ spec:
       serviceAccountName: vm-configurator
       containers:
       - name: configurator
-        image: registry.redhat.io/ubi8/ubi:latest
+        image: registry.redhat.io/openshift4/ose-cli:latest
         command:
         - /bin/bash
         - -c
         - |
           echo "🔍 VM IP Configurator Job Starting"
           echo "=================================="
-          
-          # Install required tools
-          dnf install -y jq curl
           
           # Wait for VM to be ready (with timeout)
           echo "⏳ Waiting for VM to be ready..."
@@ -92,7 +89,7 @@ spec:
               # Test actual validation
               echo "🧪 Testing validation endpoint..."
               RESULT=$(oc exec -n inventory-demo $BACKEND_POD -c backend -- curl -s -X POST http://legacy-service:8080/validate -H "Content-Type: application/json" -d '{"code":"A12345"}')
-              if echo "$RESULT" | jq -e '.valid == true' >/dev/null 2>&1; then
+              if echo "$RESULT" | grep -q '"valid"[[:space:]]*:[[:space:]]*true'; then
                 echo "✅ Validation service is working correctly!"
               else
                 echo "⚠️  Validation service responded but validation failed"
