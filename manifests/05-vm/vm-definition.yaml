@@ -12,7 +12,7 @@ metadata:
     service.istio.io/canonical-revision: v1
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-    description: "Legacy RHEL8 VM running item validation service"
+    description: "Legacy CentOS 7 running item validation service"
 spec:
   # VM should be running
   running: true
@@ -31,7 +31,7 @@ spec:
       annotations:
         # Note: VMs don't get Istio sidecar injection automatically
         # We'll handle service mesh integration via WorkloadEntry
-        vm.kubevirt.io/os: "fedora34"
+        vm.kubevirt.io/os: "centos7"
     spec:
       # VM should be scheduled and restart if it fails
       domain:
@@ -72,9 +72,9 @@ spec:
             memory: 4Gi
             cpu: "2"
             
-        # Machine type for Fedora
+        # Machine type for CentOS 7 (older)
         machine:
-          type: pc-q35-rhel8.4.0
+          type: pc-q35-rhel7.6.0
           
       # Ensure VM gets scheduled
       nodeSelector: {}
@@ -97,15 +97,15 @@ spec:
   # Data volume templates (this ensures the DataVolume is created with the VM)
   dataVolumeTemplates:
   - metadata:
-      name: rhel8-legacy-validator
+      name: centos7-legacy-validator
       labels:
         app: legacy-validator
         component: vm
     spec:
       source:
         http:
-          # Use Fedora 34 cloud image (simple, stable, RHEL8-like)
-          url: "https://download.fedoraproject.org/pub/fedora/linux/releases/34/Cloud/x86_64/images/Fedora-Cloud-Base-34-1.2.x86_64.qcow2"
+          # Use CentOS 7 - REALLY legacy!
+          url: "https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
       storage:
         resources:
           requests:
