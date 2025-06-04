@@ -7,22 +7,16 @@ metadata:
     app: frontend
     component: ui
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "7"
     haproxy.router.openshift.io/timeout: "60s"
 spec:
   to:
     kind: Service
-    # Point the route to the Istio Ingress Gateway service
-    name: istio-ingressgateway
+    name: istio-ingressgateway-proxy  # Point to the proxy service
     weight: 100
-  # The targetPort here should match the HTTP port name defined
-  # in your Istio Ingress Gateway service. Common names are 'http', 'http2', 'http-envoy'.
-  # We'll use 'http' as it's defined in your Gateway's HTTP server block.
   port:
-    targetPort: http2 # Changed back to 'http' to match Gateway's HTTP server
+    targetPort: http
   tls:
-    termination: edge # Changed from passthrough to edge
-    # OpenShift Router terminates TLS here.
-    # Traffic forwarded to Istio Ingress Gateway will be plain HTTP.
+    termination: edge
     insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None
