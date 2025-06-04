@@ -31,7 +31,7 @@ spec:
       annotations:
         # Note: VMs don't get Istio sidecar injection automatically
         # We'll handle service mesh integration via WorkloadEntry
-        vm.kubevirt.io/os: "rhel8"
+        vm.kubevirt.io/os: "fedora34"
     spec:
       # VM should be scheduled and restart if it fails
       domain:
@@ -72,9 +72,9 @@ spec:
             memory: 4Gi
             cpu: "2"
             
-        # Machine type for RHEL8
+        # Machine type for Fedora
         machine:
-          type: pc-q35-rhel8.6.0
+          type: pc-q35-rhel8.4.0
           
       # Ensure VM gets scheduled
       nodeSelector: {}
@@ -103,10 +103,9 @@ spec:
         component: vm
     spec:
       source:
-        registry:
-          # Use the same RHEL8 guest image from Red Hat registry
-          url: "docker://registry.redhat.io/rhel8/rhel-guest-image@sha256:cd97caf10611cfe4ccdeb64999f9c13b3b5f8cb25b83d0a2b9"
-          pullMethod: node
+        http:
+          # Use Fedora 34 cloud image (simple, stable, RHEL8-like)
+          url: "https://download.fedoraproject.org/pub/fedora/linux/releases/34/Cloud/x86_64/images/Fedora-Cloud-Base-34-1.2.x86_64.qcow2"
       storage:
         resources:
           requests:
