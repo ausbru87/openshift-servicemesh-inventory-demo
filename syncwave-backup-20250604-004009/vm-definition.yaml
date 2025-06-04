@@ -11,7 +11,7 @@ metadata:
     service.istio.io/canonical-name: legacy-validator
     service.istio.io/canonical-revision: v1
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "1"
     # ArgoCD health check configuration
     argocd.argoproj.io/health-check: |
       hs = {}

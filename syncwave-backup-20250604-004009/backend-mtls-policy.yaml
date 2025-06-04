@@ -7,7 +7,7 @@ metadata:
     app: backend
     component: api
   annotations:
-    argocd.argoproj.io/sync-wave: "2" # Sync after namespace and before backend deployment
+    argocd.argoproj.io/sync-wave: "3" # Sync after namespace and before backend deployment
 spec:
   selector:
     matchLabels:

@@ -10,7 +10,7 @@ metadata:
     app: backend
     component: api
   annotations:
-    argocd.argoproj.io/sync-wave: "4" # Sync after PeerAuthentication
+    argocd.argoproj.io/sync-wave: "3" # Sync after PeerAuthentication
 spec:
   host: backend-service.inventory-demo.svc.cluster.local # Fully qualified domain name of the backend service
   trafficPolicy:
