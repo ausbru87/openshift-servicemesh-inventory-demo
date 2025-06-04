@@ -34,7 +34,7 @@ spec:
       containers:
       - name: backend
         # GitHub Container Registry image - updated by GitHub Actions
-        image: ghcr.io/ausbru87/openshift-servicemesh-inventory-demo/inventory-backend:a29da87
+        image: ghcr.io/ausbru87/openshift-servicemesh-inventory-demo/inventory-backend:d7898fd
         ports:
         - containerPort: 5000
           name: http
