@@ -19,7 +19,7 @@ spec:
   # in your Istio Ingress Gateway service. Common names are 'http', 'http2', 'http-envoy'.
   # We'll use 'http' as it's defined in your Gateway's HTTP server block.
   port:
-    targetPort: http # Changed back to 'http' to match Gateway's HTTP server
+    targetPort: http2 # Changed back to 'http' to match Gateway's HTTP server
   tls:
     termination: edge # Changed from passthrough to edge
     # OpenShift Router terminates TLS here.
