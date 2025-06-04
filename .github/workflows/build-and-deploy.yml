@@ -4,9 +4,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'src/**'
-      - 'container-images/**'
-      - 'manifests/**'
+      - 'src/**' # Only trigger build if files in src/ change
+      - 'manifests/**' # Keep for GitOps updates, even if images aren't rebuilt
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -29,6 +28,12 @@ jobs:
       frontend-image: ${{ steps.image-tags.outputs.frontend-image }}
       short-sha: ${{ steps.image-tags.outputs.short-sha }}
     
+    # Add a condition to skip this job if no relevant files changed
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && contains(github.event.commits.*.modified, 'src/') || contains(github.event.commits.*.added, 'src/') || contains(github.event.commits.*.removed, 'src/'))
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -98,7 +103,7 @@ jobs:
   update-gitops:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && needs.build-and-push.result == 'success' # Only run if build-and-push succeeded
     permissions:
       contents: write
     
@@ -147,6 +152,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       security-events: write
+    
+    # Only run security scan if the build-and-push job actually ran
+    if: needs.build-and-push.result == 'success' 
     
     strategy:
       matrix:
