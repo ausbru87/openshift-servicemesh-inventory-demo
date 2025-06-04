@@ -1,6 +1,6 @@
 # This Gateway resource configures the Istio Ingress Gateway to expose
 # the frontend application to external traffic.
-# It listens on HTTP port 80 and HTTPS port 443.
+# It listens on HTTP port 80. The OpenShift Route will handle HTTPS termination.
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
@@ -18,14 +18,8 @@ spec:
   - port:
       number: 80
       name: http
-      protocol: HTTP
+      protocol: HTTP # Expecting plain HTTP from the OpenShift Router
     hosts:
     - "*" # Allow all hosts for now, or specify your route's hostname
-  - port:
-      number: 443
-      name: https
-      protocol: HTTPS
-    tls:
-      mode: PASSTHROUGH # Use PASSTHROUGH for OpenShift Route edge termination
-    hosts:
-    - "*" # Allow all hosts for now, or specify your route's hostname
+  # Removed the HTTPS server block from the Gateway, as the OpenShift Route
+  # is now configured to handle TLS termination (edge).
