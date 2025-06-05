@@ -23,14 +23,13 @@ stringData:
         sudo: ['ALL=(ALL) NOPASSWD:ALL']
         shell: /bin/bash
     
-    # System packages only - no pip needed!
+    # System packages for Fedora - minimal and focused
     packages:
       - python3
       - python3-flask
       - python3-requests
       - git
       - curl
-      - firewalld
     
     runcmd:
       # Create application directory
@@ -47,11 +46,12 @@ stringData:
       - python3 --version
       - python3 -c "import flask; print('Flask version:', flask.__version__)"
       
-      # Configure firewall
-      - systemctl start firewalld
-      - systemctl enable firewalld
-      - firewall-cmd --permanent --add-port=8080/tcp
-      - firewall-cmd --reload
+      # Disable SELinux for demo simplicity
+      - setenforce 0
+      - sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+      
+      # Disable firewall for demo simplicity
+      - systemctl disable firewalld --now || true
       
       # Copy and install systemd service from repo
       - cp openshift-servicemesh-inventory-demo/src/legacy-vm/systemd/validator.service /etc/systemd/system/
@@ -65,4 +65,4 @@ stringData:
       - systemctl status validator.service
       - curl -f http://localhost:8080/health && echo "Legacy validation service is ready!"
       
-    final_message: "Modern 'legacy' validation service deployed on RHEL 8 with system packages only!"
+    final_message: "Demo 'legacy' validation service deployed on Fedora - SELinux and firewall disabled for simplicity!"
