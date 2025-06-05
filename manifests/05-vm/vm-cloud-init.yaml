@@ -17,18 +17,6 @@ stringData:
     chpasswd: { expire: False }
     ssh_pwauth: True
     
-    # Package installation for CentOS 7 (REALLY legacy!)
-    packages:
-      - python
-      - python-pip
-      - python-setuptools
-      - git
-      - curl
-      - wget
-      - systemd
-      - htop
-      - vim
-
     # Create the validator service user
     users:
       - name: validator
@@ -56,9 +44,9 @@ stringData:
       - yum repolist enabled
       - echo "Repository fix complete"
       
-      # Test package installation
-      - yum install -y curl wget
-      
+      # THEN install packages
+      - yum install -y python python-pip python-setuptools git curl wget systemd htop vim
+  
       # Create application directory
       - mkdir -p /opt/validator
       - chown -R validator:validator /opt/validator
@@ -68,7 +56,16 @@ stringData:
       - git clone https://github.com/ausbru87/openshift-servicemesh-inventory-demo.git
       - cp -r openshift-servicemesh-inventory-demo/src/legacy-vm/* /opt/validator/
       - chown -R validator:validator /opt/validator
-      
+
+      # Fix SELinux contexts for /opt/validator
+      - semanage fcontext -a -t bin_t "/opt/validator/validator.py" || true
+      - restorecon -Rv /opt/validator/
+      - setsebool -P httpd_can_network_connect 1
+
+      # Configure firewall for port 8080
+      - firewall-cmd --permanent --add-port=8080/tcp
+      - firewall-cmd --reload      
+
       # Install Python 2.7 dependencies (LEGACY!)
       - pip install --upgrade pip
       - pip install flask==1.1.4 requests==2.25.1 werkzeug==1.0.1
