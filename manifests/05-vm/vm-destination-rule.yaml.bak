@@ -9,7 +9,7 @@ metadata:
     app: legacy-validator
     component: vm
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   host: legacy-service.inventory-demo.svc.cluster.local
   trafficPolicy:

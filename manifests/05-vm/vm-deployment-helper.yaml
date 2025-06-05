@@ -84,31 +84,6 @@ spec:
             serviceAccount: default
           EOF
 
-          # Create/Update ServiceEntry with real VM IP  
-          echo "🔧 Creating ServiceEntry with VM IP..."
-          oc apply -f - <<EOF
-          apiVersion: networking.istio.io/v1beta1
-          kind: ServiceEntry
-          metadata:
-            name: legacy-validator-external
-            namespace: inventory-demo
-            labels:
-              app: legacy-validator
-          spec:
-            hosts:
-            - legacy-service.inventory-demo.svc.cluster.local
-            ports:
-            - number: 8080
-              name: http
-              protocol: HTTP
-            location: MESH_EXTERNAL
-            resolution: STATIC
-            endpoints:
-            - address: "$VM_IP"
-              ports:
-                http: 8080
-          EOF
-
           echo "✅ Service mesh configuration created!"
 
           # Wait for validation service to be ready

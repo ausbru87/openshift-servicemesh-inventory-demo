@@ -31,3 +31,27 @@ spec:
   # Associate with the service
   serviceAccount: default
 ---
+# Alternative ServiceEntry approach for external service registration
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: legacy-validator-external
+  namespace: inventory-demo
+  labels:
+    app: legacy-validator
+  annotations:
+    argocd.argoproj.io/sync-wave: "8"
+    description: "Alternative service mesh registration via ServiceEntry"
+spec:
+  hosts:
+  - legacy-service.inventory-demo.svc.cluster.local
+  ports:
+  - number: 8080
+    name: http
+    protocol: HTTP
+  location: MESH_EXTERNAL
+  resolution: STATIC
+  endpoints:
+  - address: "PLACEHOLDER_VM_IP"
+    ports:
+      http: 8080
