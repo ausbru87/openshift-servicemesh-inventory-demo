@@ -1,5 +1,5 @@
-# DestinationRule for the legacy validation service
-# Configures how traffic flows to the VM through the service mesh
+# Update manifests/05-vm/vm-destination-rule.yaml
+# Remove the TLS configuration since VMs don't have Istio sidecars
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
@@ -37,10 +37,7 @@ spec:
     loadBalancer:
       simple: LEAST_CONN
       
-    # TLS configuration - since VM doesn't have sidecar, use SIMPLE mode
-    tls:
-      mode: SIMPLE
-      # Note: For production, you might want ISTIO_MUTUAL if the VM has Istio proxy
+    # REMOVED: tls configuration since VM doesn't have Istio sidecar
   
   # Port-specific policies
   portLevelSettings:
