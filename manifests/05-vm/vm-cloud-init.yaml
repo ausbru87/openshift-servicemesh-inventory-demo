@@ -39,15 +39,25 @@ stringData:
     
     # Commands to run during initialization (CentOS 7 / Python 2.7)
     runcmd:
-      # Fix CentOS 7 repos to use working vault URLs
-      - echo "Fixing CentOS 7 repositories..."
-      - sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*.repo
-      - sed -i 's|#baseurl=http://mirror.centos.org/centos|baseurl=https://vault.centos.org|g' /etc/yum.repos.d/CentOS-*.repo
-      - sed -i 's|baseurl=http://mirror.centos.org/centos|baseurl=https://vault.centos.org|g' /etc/yum.repos.d/CentOS-*.repo
+      # Fix CentOS 7 repositories using yum-config-manager (cleaner approach)
+      - echo "Fixing CentOS 7 repositories with yum-config-manager..."
       
-      # Clean and test repos
+      # Disable ALL broken base repositories
+      - yum-config-manager --disable base,updates,extras,centosplus,fasttrack
+      
+      # Enable specific working vault repositories
+      - yum-config-manager --enable C7.0.1406-base,C7.0.1406-updates,C7.0.1406-extras
+      
+      # Alternative: If those don't work, try the 7.1.1503 versions
+      # - yum-config-manager --enable C7.1.1503-base,C7.1.1503-updates,C7.1.1503-extras
+      
+      # Clean package cache and verify repos
       - yum clean all
-      - yum repolist
+      - yum repolist enabled
+      - echo "Repository fix complete"
+      
+      # Test package installation
+      - yum install -y curl wget
       
       # Create application directory
       - mkdir -p /opt/validator
