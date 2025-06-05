@@ -1,12 +1,12 @@
 [Unit]
-Description=Legacy Item Validation Service (Python 2.7)
+Description=Legacy Item Validation Service (Modern Python 3)
 After=network.target
 
 [Service]
 Type=simple
 User=validator
 WorkingDirectory=/opt/validator
-ExecStart=/usr/bin/python /opt/validator/validator.py
+ExecStart=/usr/bin/python3 /opt/validator/validator.py
 Restart=always
 RestartSec=5
 StandardOutput=journal

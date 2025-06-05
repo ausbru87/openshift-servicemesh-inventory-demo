@@ -22,71 +22,47 @@ stringData:
       - name: validator
         sudo: ['ALL=(ALL) NOPASSWD:ALL']
         shell: /bin/bash
-        lock_passwd: false
-        passwd: '$6$rounds=4096$saltsaltlettuce$Lp/FV.2oOgew7GbM6Nr8KMGgBP/1ToqCdAV3xFLKI6bTjxJ9OTBEYFJKIgBsEgVHTOJF/X66tj7a8pZLt6gfV/'
     
-    # Commands to run during initialization (CentOS 7 / Python 2.7)
+    # System packages only - no pip needed!
+    packages:
+      - python3
+      - python3-flask
+      - python3-requests
+      - git
+      - curl
+      - firewalld
+    
     runcmd:
-      # Fix CentOS 7 repositories using yum-config-manager (cleaner approach)
-      - echo "Fixing CentOS 7 repositories with yum-config-manager..."
-      
-      # Disable ALL broken base repositories
-      - yum-config-manager --disable base,updates,extras,centosplus,fasttrack
-      
-      # Enable specific working vault repositories
-      - yum-config-manager --enable C7.0.1406-base,C7.0.1406-updates,C7.0.1406-extras
-      
-      # Alternative: If those don't work, try the 7.1.1503 versions
-      # - yum-config-manager --enable C7.1.1503-base,C7.1.1503-updates,C7.1.1503-extras
-      
-      # Clean package cache and verify repos
-      - yum clean all
-      - yum repolist enabled
-      - echo "Repository fix complete"
-      
-      # THEN install packages
-      - yum install -y python python-pip python-setuptools git curl wget systemd htop vim
-  
       # Create application directory
-      - mkdir -p /opt/validator
+      - mkdir -p /opt/validator/logs
       - chown -R validator:validator /opt/validator
       
-      # Clone the application from your repository
+      # Clone the application
       - cd /tmp
       - git clone https://github.com/ausbru87/openshift-servicemesh-inventory-demo.git
-      - cp -r openshift-servicemesh-inventory-demo/src/legacy-vm/* /opt/validator/
+      - cp openshift-servicemesh-inventory-demo/src/legacy-vm/validator.py /opt/validator/
       - chown -R validator:validator /opt/validator
-
-      # Fix SELinux contexts for /opt/validator
-      - semanage fcontext -a -t bin_t "/opt/validator/validator.py" || true
-      - restorecon -Rv /opt/validator/
-      - setsebool -P httpd_can_network_connect 1
-
-      # Configure firewall for port 8080
+      
+      # Verify Python 3 and Flask installation
+      - python3 --version
+      - python3 -c "import flask; print('Flask version:', flask.__version__)"
+      
+      # Configure firewall
+      - systemctl start firewalld
+      - systemctl enable firewalld
       - firewall-cmd --permanent --add-port=8080/tcp
-      - firewall-cmd --reload      
-
-      # Install Python 2.7 dependencies (LEGACY!)
-      - pip install --upgrade pip
-      - pip install flask==1.1.4 requests==2.25.1 werkzeug==1.0.1
+      - firewall-cmd --reload
       
-      # Update the Python shebang for Python 2.7 compatibility
-      - sed -i '1s/python3/python/' /opt/validator/validator.py
+      # Copy and install systemd service from repo
+      - cp openshift-servicemesh-inventory-demo/src/legacy-vm/systemd/validator.service /etc/systemd/system/
       
-      # Install and start the systemd service
-      - cp /opt/validator/systemd/validator.service /etc/systemd/system/
-      - sed -i 's/python3/python/' /etc/systemd/system/validator.service
       - systemctl daemon-reload
       - systemctl enable validator.service
       - systemctl start validator.service
       
-      # Wait and verify service is running
+      # Wait and test
       - sleep 10
       - systemctl status validator.service
-      - echo "Testing legacy validation service..."
-      - curl -f http://localhost:8080/health || echo "Service not ready yet, will retry..."
-      - sleep 5
       - curl -f http://localhost:8080/health && echo "Legacy validation service is ready!"
       
-    # Final message
-    final_message: "LEGACY validation service deployed with Python 2.7 on CentOS 7! This is REALLY old school!"
+    final_message: "Modern 'legacy' validation service deployed on RHEL 8 with system packages only!"
