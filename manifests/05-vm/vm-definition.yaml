@@ -99,7 +99,7 @@ spec:
             
         # Machine type for CentOS 7 (older)
         machine:
-          type: pc-q35-4.2  # Generic modern machine type
+          type: q35 
           
       # Ensure VM gets scheduled
       nodeSelector: {}
