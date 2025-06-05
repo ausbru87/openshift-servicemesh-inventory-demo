@@ -23,10 +23,9 @@ spec:
     name: http
     # Name is important for Istio protocol detection
   selector:
-    # This selector will NOT match the VM directly
-    # Instead, we'll use a WorkloadEntry to register the VM
-    # For now, we create the service without a working selector
-    app: legacy-validator-vm-placeholder
+    app: legacy-validator
+    component: vm
+    # This selector will match the WorkloadEntry created for the VM
   sessionAffinity: None
 ---
 # Endpoint for the VM (will be populated by WorkloadEntry)
