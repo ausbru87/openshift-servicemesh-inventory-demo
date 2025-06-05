@@ -34,7 +34,7 @@ app = Flask(__name__)
 LEGACY_RULES = {
     'prohibited_prefixes': ['XX', 'ZZ', 'TEST', 'TEMP', 'DEMO', 'SYS'],
     'prohibited_suffixes': ['000', '999', 'DEL', 'BAD'],
-    'required_patterns': r'^[A-Z][A-Z0-9]{5},
+    'required_patterns': r'^[A-Z][A-Z0-9]{5}$',  # Fixed: Added closing $ and quote
     'special_codes': {
         'LEGACY': 'Reserved for legacy system migration',
         'SYSTEM': 'Reserved for system use',
