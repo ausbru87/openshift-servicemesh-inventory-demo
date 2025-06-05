@@ -11,6 +11,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
 spec:
   replicas: 1
+  revisionHistoryLimit: 5  # Only keep 5 old ReplicaSets
   strategy:
     type: Recreate
   selector:

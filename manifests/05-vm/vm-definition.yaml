@@ -12,32 +12,22 @@ metadata:
     service.istio.io/canonical-revision: v1
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-    # ArgoCD health check configuration
-    argocd.argoproj.io/health-check: |
-      hs = {}
-      if obj.status ~= nil then
-        if obj.status.conditions ~= nil then
-          for i, condition in ipairs(obj.status.conditions) do
-            if condition.type == "Ready" and condition.status == "True" then
-              hs.status = "Healthy"
-              hs.message = "VirtualMachine is ready"
-              return hs
-            end
-          end
-        end
-        if obj.status.printableStatus == "Running" then
-          hs.status = "Healthy"
-          hs.message = "VirtualMachine is running"
-          return hs
-        end
-      end
-      hs.status = "Progressing"
-      hs.message = "VirtualMachine is not ready"
-      return hs
-    argocd.argoproj.io/sync-options: "SkipDryRunOnMissingResource=true"
-    # Ignore the virt-launcher pod health
-    argocd.argoproj.io/compare-options: "IgnoreExtraneous"
-    description: "Legacy Fedora VM running item validation service"
+    argocd.argoproj.io/sync-options: "Replace=true"
+    # Ensure this VM is managed by ArgoCD
+    argocd.argoproj.io/managed-by: "argocd"
+    # Note: VMs don't get Istio sidecar injection automatically
+    # We'll handle service mesh integration via WorkloadEntry
+    kubevirt.io/vm: legacy-validator
+    # Description for the VM
+    openshift.io/description: "Legacy Fedora VM running item validation service"
+    # Display name for the VM in OpenShift console
+    openshift.io/display-name: "Legacy Validator VM"
+    # This VM is part of the Service Mesh Inventory demo
+    app.kubernetes.io/part-of: servicemesh-inventory
+    # This VM is part of the inventory-demo namespace
+    app.kubernetes.io/namespace: inventory-demo
+    # This VM is part of the inventory-demo application
+    app.kubernetes.io/application: inventory-demo
 spec:
   # VM should be running
   running: true

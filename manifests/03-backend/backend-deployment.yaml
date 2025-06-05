@@ -11,6 +11,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 2
+  revisionHistoryLimit: 2  # Only keep 2 old ReplicaSets
   selector:
     matchLabels:
       app: backend

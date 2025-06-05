@@ -9,6 +9,7 @@ metadata:
     version: v1
 spec:
   replicas: 2
+  revisionHistoryLimit: 2  # Only keep 2 old ReplicaSets
   selector:
     matchLabels:
       app: frontend

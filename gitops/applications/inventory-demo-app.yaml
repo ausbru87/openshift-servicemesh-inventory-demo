@@ -35,13 +35,7 @@ spec:
         factor: 2
         maxDuration: 3m
   ignoreDifferences:
-  # Ignore virt-launcher pods (existing)
-  - group: ""
-    kind: Pod
-    name: virt-launcher-*
-    jsonPointers:
-    - /status
-  # NEW - KubeVirt VirtualMachine ignoreDifferences (recommended best practice)
+  # KubeVirt VirtualMachine ignoreDifferences (recommended best practice)
   - group: kubevirt.io
     kind: VirtualMachine
     managedFieldsManagers:
