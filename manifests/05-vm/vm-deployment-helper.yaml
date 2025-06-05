@@ -169,7 +169,7 @@ rules:
   verbs: ["get", "list"]
 - apiGroups: ["networking.istio.io"]
   resources: ["workloadentries", "serviceentries"]
-  verbs: ["get", "patch", "update"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"] 
 - apiGroups: ["kubevirt.io"]
   resources: ["virtualmachineinstances", "virtualmachines"]
   verbs: ["get", "list", "watch"]

@@ -63,3 +63,5 @@ spec:
     - /spec/template/spec/domain/devices/interfaces/0/macAddress
     - /spec/template/metadata/creationTimestamp
     - /spec/dataVolumeTemplates/0/metadata/creationTimestamp
+    # Spec fields that OpenShift modifies
+    - /spec/template/spec/nodeSelector
