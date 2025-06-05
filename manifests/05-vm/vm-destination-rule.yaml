@@ -1,3 +1,5 @@
+# Update manifests/05-vm/vm-destination-rule.yaml
+# Remove the TLS configuration since VMs don't have Istio sidecars
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
@@ -8,7 +10,6 @@ metadata:
     component: vm
   annotations:
     argocd.argoproj.io/sync-wave: "3"
-    argocd.argoproj.io/sync-options: "ServerSideApply=true"
 spec:
   host: legacy-service.inventory-demo.svc.cluster.local
   trafficPolicy:
@@ -35,3 +36,14 @@ spec:
     # Load balancer configuration
     loadBalancer:
       simple: LEAST_CONN
+      
+    # REMOVED: tls configuration since VM doesn't have Istio sidecar
+  
+  # Port-specific policies
+  portLevelSettings:
+  - port:
+      number: 8080
+    connectionPool:
+      tcp:
+        maxConnections: 5
+        connectTimeout: 5s
