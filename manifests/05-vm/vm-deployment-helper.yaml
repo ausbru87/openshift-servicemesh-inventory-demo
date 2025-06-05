@@ -32,7 +32,7 @@ spec:
         - |
           echo "🔍 VM IP Configurator Job Starting"
           echo "=================================="
-          
+
           # Wait for VM to be ready (with timeout)
           echo "⏳ Waiting for VM to be ready..."
           for i in {1..60}; do
@@ -46,27 +46,71 @@ spec:
             echo "   Attempt $i/60: VM not ready yet, waiting 10s..."
             sleep 10
           done
-          
+
           # Get VM IP
           VM_IP=$(oc get vmi legacy-validator -n inventory-demo -o jsonpath='{.status.interfaces[0].ipAddress}')
-          
+
           if [ -z "$VM_IP" ]; then
               echo "❌ Failed to get VM IP address after 10 minutes"
               exit 1
           fi
-          
+
           echo "✅ VM IP Address: $VM_IP"
-          
-          # Update WorkloadEntry
-          echo "🔧 Updating WorkloadEntry with VM IP..."
-          oc patch workloadentry legacy-validator-vm -n inventory-demo --type='merge' -p="{\"spec\":{\"address\":\"$VM_IP\"}}"
-          
-          # Update ServiceEntry  
-          echo "🔧 Updating ServiceEntry with VM IP..."
-          oc patch serviceentry legacy-validator-external -n inventory-demo --type='merge' -p="{\"spec\":{\"endpoints\":[{\"address\":\"$VM_IP\",\"ports\":{\"http\":8080}}]}}"
-          
-          echo "✅ Service mesh configuration updated!"
-          
+
+          # Create/Update WorkloadEntry with real VM IP
+          echo "🔧 Creating WorkloadEntry with VM IP..."
+          oc apply -f - <<EOF
+          apiVersion: networking.istio.io/v1beta1
+          kind: WorkloadEntry
+          metadata:
+            name: legacy-validator-vm
+            namespace: inventory-demo
+            labels:
+              app: legacy-validator
+              component: vm
+              version: v1
+              service.istio.io/canonical-name: legacy-validator
+              service.istio.io/canonical-revision: v1
+          spec:
+            address: "$VM_IP"
+            ports:
+              http: 8080
+            labels:
+              app: legacy-validator
+              component: vm
+              version: v1
+              service.istio.io/canonical-name: legacy-validator
+              service.istio.io/canonical-revision: v1
+            serviceAccount: default
+          EOF
+
+          # Create/Update ServiceEntry with real VM IP  
+          echo "🔧 Creating ServiceEntry with VM IP..."
+          oc apply -f - <<EOF
+          apiVersion: networking.istio.io/v1beta1
+          kind: ServiceEntry
+          metadata:
+            name: legacy-validator-external
+            namespace: inventory-demo
+            labels:
+              app: legacy-validator
+          spec:
+            hosts:
+            - legacy-service.inventory-demo.svc.cluster.local
+            ports:
+            - number: 8080
+              name: http
+              protocol: HTTP
+            location: MESH_EXTERNAL
+            resolution: STATIC
+            endpoints:
+            - address: "$VM_IP"
+              ports:
+                http: 8080
+          EOF
+
+          echo "✅ Service mesh configuration created!"
+
           # Wait for validation service to be ready
           echo "⏳ Waiting for validation service to start..."
           for i in {1..30}; do
@@ -77,7 +121,7 @@ spec:
             echo "   Attempt $i/30: Service not ready, waiting 10s..."
             sleep 10
           done
-          
+
           # Test connectivity through service mesh
           echo "🧪 Testing service mesh connectivity..."
           BACKEND_POD=$(oc get pods -n inventory-demo -l app=backend -o jsonpath='{.items[0].metadata.name}')
@@ -101,13 +145,13 @@ spec:
           else
             echo "⚠️  No backend pod found for testing"
           fi
-          
+
           echo "🎉 VM configuration complete!"
           echo ""
           echo "📊 Configuration Summary:"
           echo "  VM IP: $VM_IP"
-          echo "  WorkloadEntry: Updated"
-          echo "  ServiceEntry: Updated"
+          echo "  WorkloadEntry: Created/Updated"
+          echo "  ServiceEntry: Created/Updated"
           echo "  Service Mesh: Configured"
           
         env:
